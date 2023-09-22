@@ -16,12 +16,43 @@ db.init_app(app)
 
 api = Api(app)
 
+def j_sonify(dict):
+    response = make_response(jsonify(dict), 200)
+    response.headers["Content-Type"] = "application/json"
+    return response
+    
 class Plants(Resource):
-    pass
-
-class PlantByID(Resource):
-    pass
+    def get(self):
+        plants = [plant.to_dict() for plant in Plant.query.all()]
         
+        res = j_sonify(plants)
+        return res
+    
+    def post(self):
+        data = request.get_json()
+        new_plant = Plant(
+            name = data['name'],
+            image = data["image"],
+            price = data["price"]
+        )
+
+        db.session.add(new_plant)
+        db.session.commit()
+        
+        new_plant_dict = new_plant.to_dict()
+        res = j_sonify(new_plant_dict)
+        return res
+        
+class PlantByID(Resource):
+    def get(self, id):
+        plant = Plant.query.get(int(id)).to_dict()
+        
+        res = j_sonify(plant)
+        return res
+
+
+api.add_resource(Plants, '/plants')
+api.add_resource(PlantByID, '/plants/<int:id>')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
